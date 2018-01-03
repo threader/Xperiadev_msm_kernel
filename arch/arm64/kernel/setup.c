@@ -226,7 +226,6 @@ static void __maybe_unused install_bp_hardening_cb(bp_hardening_cb_t fn)
 {
 	__install_bp_hardening_cb(fn);
 }
-#endif	/* CONFIG_HARDEN_BRANCH_PREDICTOR */
 
 void enable_psci_bp_hardening(void *data)
 {
