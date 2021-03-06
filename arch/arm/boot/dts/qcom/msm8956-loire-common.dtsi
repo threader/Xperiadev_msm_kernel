@@ -726,7 +726,6 @@
 	};
 
 	/delete-node/ qseecom@85e00000;
-/*
 	qcom_seecom: qseecom@8dd00000 {
 		compatible = "qcom,qseecom";
 		reg = <0x8dd00000 0x1400000>;
@@ -754,7 +753,7 @@
 				"iface_clk", "bus_clk";
 		qcom,ce-opp-freq = <100000000>;
 	};
-*/
+
 	qcom,bcl {
 		qcom,ibat-monitor {
 			qcom,soc-low-threshold = <5>;

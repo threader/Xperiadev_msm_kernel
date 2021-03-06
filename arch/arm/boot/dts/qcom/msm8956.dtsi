@@ -1596,7 +1596,7 @@
 				"iface_clk", "bus_clk";
 		qcom,ce-opp-freq = <100000000>;
 	};
-
+/*
 	qcom_seecom: qseecom@85b00000 {
 		compatible = "qcom,qseecom";
 		reg = <0x85b00000 0x800000>;
@@ -1624,7 +1624,7 @@
 				"iface_clk", "bus_clk";
 		qcom,ce-opp-freq = <100000000>;
 	};
-
+*/
 	qcom,ipc_router {
 		compatible = "qcom,ipc_router";
 		qcom,node-id = <1>;
