@@ -171,7 +171,7 @@ static unsigned int process_info(struct page_info *info,
 	kfree(info);
 	return i;
 }
-
+#ifdef CONFIG_ARCH_MSM
 static int ion_system_heap_allocate(struct ion_heap *heap,
 				     struct ion_buffer *buffer,
 				     unsigned long size, unsigned long align,
@@ -317,7 +317,64 @@ err:
 	}
 	return -ENOMEM;
 }
-
+#else
+static int ion_system_heap_allocate(struct ion_heap *heap,
+				     struct ion_buffer *buffer,
+				     unsigned long size, unsigned long align,
+				     unsigned long flags)
+{
+	struct ion_system_heap *sys_heap = container_of(heap,
+							struct ion_system_heap,
+							heap);
+	struct sg_table *table;
+	struct scatterlist *sg;
+	int ret;
+	struct list_head pages;
+	struct page_info *info, *tmp_info;
+	int i = 0;
+	unsigned long size_remaining = PAGE_ALIGN(size);
+	unsigned int max_order = orders[0];
+	if (align > PAGE_SIZE)
+		return -EINVAL;
+	if (size / PAGE_SIZE > totalram_pages / 2)
+		return -ENOMEM;
+	INIT_LIST_HEAD(&pages);
+	while (size_remaining > 0) {
+		info = alloc_largest_available(sys_heap, buffer, size_remaining,
+						max_order);
+		if (!info)
+			goto err;
+		list_add_tail(&info->list, &pages);
+		size_remaining -= (1 << info->order) * PAGE_SIZE;
+		max_order = info->order;
+		i++;
+	}
+	table = kzalloc(sizeof(struct sg_table), GFP_KERNEL);
+	if (!table)
+		goto err;
+	ret = sg_alloc_table(table, i, GFP_KERNEL);
+	if (ret)
+		goto err1;
+	sg = table->sgl;
+	list_for_each_entry_safe(info, tmp_info, &pages, list) {
+		struct page *page = info->page;
+		sg_set_page(sg, page, (1 << info->order) * PAGE_SIZE, 0);
+		sg = sg_next(sg);
+		list_del(&info->list);
+		kfree(info);
+	}
+	buffer->priv_virt = table;
+	return 0;
+err1:
+	kfree(table);
+err:
+	list_for_each_entry_safe(info, tmp_info, &pages, list) {
+		free_buffer_page(sys_heap, buffer, info->page, info->order);
+		kfree(info);
+	}
+	return -ENOMEM;
+}
+#endif
 void ion_system_heap_free(struct ion_buffer *buffer)
 {
 	struct ion_heap *heap = buffer->heap;
@@ -326,11 +383,18 @@ void ion_system_heap_free(struct ion_buffer *buffer)
 							heap);
 	struct sg_table *table = buffer->sg_table;
 	struct scatterlist *sg;
+	bool cached = ion_buffer_cached(buffer);
 	LIST_HEAD(pages);
 	int i;
-
+#ifdef CONFIG_ARCH_MSM
 	if (!(buffer->private_flags & ION_PRIV_FLAG_SHRINKER_FREE))
 		msm_ion_heap_buffer_zero(buffer);
+#else
+/* uncached pages come from the page pools, zero them before returning
+	   for security purposes (other allocations are zerod at alloc time */
+	if (!cached && !(buffer->private_flags & ION_PRIV_FLAG_SHRINKER_FREE))
+		ion_heap_buffer_zero(buffer);
+#endif
 
 	for_each_sg(table->sgl, sg, table->nents, i)
 		free_buffer_page(sys_heap, buffer, sg_page(sg),
