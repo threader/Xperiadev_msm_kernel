@@ -23,7 +23,7 @@
 #include <trace/events/kvm.h>
 #include <asm/pgalloc.h>
 #include <asm/cacheflush.h>
-#include <asm/kvm_arm.h>
+#include "../include/asm/kvm_arm.h"
 #include <asm/kvm_mmu.h>
 #include <asm/kvm_mmio.h>
 #include <asm/kvm_asm.h>

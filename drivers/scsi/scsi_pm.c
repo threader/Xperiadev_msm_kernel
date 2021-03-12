@@ -74,13 +74,15 @@ scsi_bus_resume_common(struct device *dev, int (*cb)(struct device *))
 		err = scsi_dev_type_resume(dev, cb);
 
 	if (err == 0) {
-		int ret;
+
+		bool was_runtime_suspended;
+		was_runtime_suspended = pm_runtime_suspended(dev);
 
 		pm_runtime_disable(dev);
-		ret = pm_runtime_set_active(dev);
+		err = pm_runtime_set_active(dev);
 		pm_runtime_enable(dev);
 
-		if (!ret && scsi_is_sdev_device(dev)) {
+		if (!err && scsi_is_sdev_device(dev)) {
 			struct scsi_device *sdev = to_scsi_device(dev);
 
 			/*
@@ -88,8 +90,12 @@ scsi_bus_resume_common(struct device *dev, int (*cb)(struct device *))
 			 * then we should update request queue's runtime status
 			 * as well.
 			 */
-			if (sdev->request_queue->dev)
+//			if (sdev->request_queue->dev)
+                       if (was_runtime_suspended)
 				blk_post_runtime_resume(sdev->request_queue, 0);
+                       else
+                blk_set_runtime_active(sdev->request_queue);
+
 		}
 	}
 	return err;

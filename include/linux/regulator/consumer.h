@@ -370,7 +370,7 @@ static inline int regulator_allow_bypass(struct regulator *regulator,
 
 static inline int regulator_register_ocp_notification(
 			struct regulator *regulator,
-			struct regulator_ocp_notification *ocp_notification);
+			struct regulator_ocp_notification *ocp_notification)
 {
 	return 0;
 }
