@@ -68,7 +68,7 @@ static void ion_system_secure_heap_free(struct ion_buffer *buffer)
 
 	source_vm = get_secure_vmid(buffer->flags);
 	dest_vm = VMID_HLOS;
-
+#ifdef CONFIG_ARCH_MSM
 	ret = msm_ion_hyp_assign_call(buffer->priv_virt, &source_vm,
 					sizeof(source_vm), &dest_vm,
 					sizeof(dest_vm));
@@ -78,6 +78,7 @@ static void ion_system_secure_heap_free(struct ion_buffer *buffer)
 								__func__);
 		return;
 	}
+#endif
 	buffer->heap = secure_heap->sys_heap;
 	secure_heap->sys_heap->ops->free(buffer);
 }
@@ -87,20 +88,26 @@ static int ion_system_secure_heap_allocate(struct ion_heap *heap,
 					unsigned long size, unsigned long align,
 					unsigned long flags)
 {
-	int ret;
+	int ret = 0;
 	u32 source_vm;
 	u32 dest_vm;
 	struct ion_system_secure_heap *secure_heap = container_of(heap,
 						struct ion_system_secure_heap,
 						heap);
-
+#ifdef CONFIG_ARCH_MSM
 	if (!ion_heap_is_system_secure_heap_type(secure_heap->heap.type) ||
 		!is_cp_flag_present(flags)) {
 		pr_info("%s: Incorrect heap type or incorrect flags\n",
 								__func__);
 		return -EINVAL;
 	}
-
+#else
+	if (!is_cp_flag_present(flags)) {
+		pr_info("%s: Incorrect flags\n",
+								__func__);
+		return -EINVAL;
+	}
+#endif
 	source_vm = VMID_HLOS;
 	dest_vm = get_secure_vmid(flags);
 	if (dest_vm < 0) {
@@ -115,10 +122,11 @@ static int ion_system_secure_heap_allocate(struct ion_heap *heap,
 			__func__, heap->name, ret);
 		return ret;
 	}
+#ifdef CONFIG_ARCH_MSM
 	ret = msm_ion_hyp_assign_call(buffer->priv_virt, &source_vm,
 					sizeof(source_vm), &dest_vm,
 					sizeof(dest_vm));
-
+#endif
 	if (ret)
 		ion_system_secure_heap_free(buffer);
 
@@ -143,7 +151,7 @@ static void ion_system_secure_heap_unmap_dma(struct ion_heap *heap,
 						struct ion_system_secure_heap,
 						heap);
 
-	secure_heap->sys_heap->ops->map_dma(secure_heap->sys_heap,
+	secure_heap->sys_heap->ops->unmap_dma(secure_heap->sys_heap,
 							buffer);
 }
 
@@ -201,7 +209,9 @@ struct ion_heap *ion_system_secure_heap_create(struct ion_platform_heap *unused)
 	heap->heap.ops = &system_secure_heap_ops;
 	heap->heap.type = ION_HEAP_TYPE_SYSTEM_SECURE;
 	heap->heap.flags = ION_HEAP_FLAG_DEFER_FREE;
+#ifdef CONFIG_ARCH_MSM
 	heap->sys_heap = get_ion_heap(ION_SYSTEM_HEAP_ID);
+#endif
 	return &heap->heap;
 }
 

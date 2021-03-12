@@ -25,7 +25,7 @@
 #include <linux/vmalloc.h>
 #include <linux/swap.h>
 #include "ion_priv.h"
-
+#ifdef CONFIG_ARCH_MSM
 static void *ion_page_pool_alloc_pages(struct ion_page_pool *pool)
 {
 	struct page *page;
@@ -44,7 +44,17 @@ error_free_pages:
 	__free_pages(page, pool->order);
 	return NULL;
 }
-
+#else 
+static void *ion_page_pool_alloc_pages(struct ion_page_pool *pool)
+{
+	struct page *page = alloc_pages(pool->gfp_mask, pool->order);
+	if (!page)
+		return NULL;
+	ion_pages_sync_for_device(NULL, page, PAGE_SIZE << pool->order,
+						DMA_BIDIRECTIONAL);
+	return page;
+}
+#endif
 static void ion_page_pool_free_pages(struct ion_page_pool *pool,
 				     struct page *page)
 {
