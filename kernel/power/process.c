@@ -48,13 +48,13 @@ static int try_to_freeze_tasks(bool user_only)
 	while (true) {
 		todo = 0;
 		read_lock(&tasklist_lock);
-		for_each_process_thread(g, p) {
+		do_each_thread(g, p) {
 			if (p == current || !freeze_task(p))
 				continue;
 
 			if (!freezer_should_skip(p))
 				todo++;
-		}
+		} while_each_thread(g, p);
 		read_unlock(&tasklist_lock);
 
 		if (!user_only) {
@@ -102,11 +102,11 @@ static int try_to_freeze_tasks(bool user_only)
 		       todo - wq_busy, wq_busy);
 
 		read_lock(&tasklist_lock);
-		for_each_process_thread(g, p) {
+		do_each_thread(g, p) {
 			if (p != current && !freezer_should_skip(p)
 			    && freezing(p) && !frozen(p))
 				sched_show_task(p);
-		}
+		} while_each_thread(g, p);
 		read_unlock(&tasklist_lock);
 	} else {
 		printk("(elapsed %d.%03d seconds) ", elapsed_msecs / 1000,
@@ -116,27 +116,25 @@ static int try_to_freeze_tasks(bool user_only)
 	return todo ? -EBUSY : 0;
 }
 
-static bool __check_frozen_processes(void)
-{
-	struct task_struct *g, *p;
-
-	for_each_process_thread(g, p)
-		if (p != current && !freezer_should_skip(p) && !frozen(p))
-			return false;
-
-	return true;
-}
-
 /*
  * Returns true if all freezable tasks (except for current) are frozen already
  */
 static bool check_frozen_processes(void)
 {
-	bool ret;
+	struct task_struct *g, *p;
+	bool ret = true;
 
 	read_lock(&tasklist_lock);
-	ret = __check_frozen_processes();
+	for_each_process_thread(g, p) {
+		if (p != current && !freezer_should_skip(p) &&
+		    !frozen(p)) {
+			ret = false;
+			goto done;
+		}
+	}
+done:
 	read_unlock(&tasklist_lock);
+
 	return ret;
 }
 
@@ -231,9 +229,9 @@ void thaw_processes(void)
 	thaw_workqueues();
 
 	read_lock(&tasklist_lock);
-	for_each_process_thread(g, p) {
+	do_each_thread(g, p) {
 		__thaw_task(p);
-	}
+	} while_each_thread(g, p);
 	read_unlock(&tasklist_lock);
 
 	usermodehelper_enable();
@@ -252,10 +250,10 @@ void thaw_kernel_threads(void)
 	thaw_workqueues();
 
 	read_lock(&tasklist_lock);
-	for_each_process_thread(g, p) {
+	do_each_thread(g, p) {
 		if (p->flags & (PF_KTHREAD | PF_WQ_WORKER))
 			__thaw_task(p);
-	}
+	} while_each_thread(g, p);
 	read_unlock(&tasklist_lock);
 
 	schedule();
