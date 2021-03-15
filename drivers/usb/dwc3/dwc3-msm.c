@@ -2721,6 +2721,24 @@ static int dwc3_msm_power_set_property_usb(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CURRENT_MAX:
 		mdwc->current_max = val->intval;
 		break;
+#ifdef CONFIG_SONY_USB_EXTENSIONS
+	case POWER_SUPPLY_PROP_TYPE:
+		if (mdwc->otg_xceiv) {
+			if ((mdwc->ext_inuse || mdwc->ext_switching) &&
+			    (POWER_SUPPLY_TYPE_UNKNOWN != val->intval))
+				return 0;
+		}
+		/* If it already received a notification of HVDCP,
+		 * skip this setting of power_supply to avoid overwrite by DCP.
+		 */
+		if (psy->type == POWER_SUPPLY_TYPE_USB_HVDCP &&
+				val->intval == POWER_SUPPLY_TYPE_USB_DCP)
+			return 0;
+		psy->type = val->intval;
+
+		switch (psy->type) {
+#endif
+#if 0
 	case POWER_SUPPLY_PROP_REAL_TYPE:
 		mdwc->usb_supply_type = val->intval;
 		/*
@@ -2737,6 +2755,7 @@ static int dwc3_msm_power_set_property_usb(struct power_supply *psy,
 		else
 			psy->type = mdwc->usb_supply_type;
 		switch (mdwc->usb_supply_type) {
+#endif
 		case POWER_SUPPLY_TYPE_USB:
 			mdwc->charger.chg_type = DWC3_SDP_CHARGER;
 			break;
