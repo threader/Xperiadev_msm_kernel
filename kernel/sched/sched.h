@@ -740,6 +740,11 @@ struct rq {
 	struct llist_head wake_list;
 #endif
 
+#ifdef CONFIG_CPU_IDLE
+	/* Must be inspected within a rcu lock section */
+	struct cpuidle_state *idle_state;
+#endif
+
 	struct sched_avg avg;
 };
 
