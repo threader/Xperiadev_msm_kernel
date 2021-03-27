@@ -653,13 +653,14 @@ static int ion_secure_cma_allocate(struct ion_heap *heap,
 	unsigned long secure_allocation = flags & ION_FLAG_SECURE;
 	struct ion_secure_cma_buffer_info *buf = NULL;
 	unsigned long allow_non_contig = flags & ION_FLAG_ALLOW_NON_CONTIG;
-
+#ifdef CONFIG_ARCH_MSM
 	if (!secure_allocation &&
 		!ion_heap_allow_secure_allocation(heap->type)) {
 		pr_err("%s: non-secure allocation disallowed from heap %s %lx\n",
 			__func__, heap->name, flags);
 		return -ENOMEM;
 	}
+#endif
 
 	if (ION_IS_CACHED(flags)) {
 		pr_err("%s: cannot allocate cached memory from secure heap %s\n",
