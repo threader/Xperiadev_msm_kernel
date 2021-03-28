@@ -1188,12 +1188,12 @@
 	 * on dual-dsi split panel devices. Moreover, this doesn't
 	 * work (but kernel boots) on single-dsi panels.
 	 */
-
+	/*
 	qcom,mdss-fb-splash-logo-enabled;
 	qcom,cont-splash-memory {
 		linux,contiguous-region = <&cont_splash_mem>;
 	};
-
+	*/
 };
 
 &mdss_mdp {

@@ -490,6 +490,15 @@ el0_undef:
 	enable_dbg_and_irq
 	mov	x0, sp
 	b	do_undefinstr
+el0_sys:
+	/*
+	 * System instructions, for trapped cache maintenance instructions
+	 */
+	enable_dbg
+	enable_irq
+	mov	x0, x25
+	mov	x1, sp
+	b	do_sysinstr
 el0_dbg:
 	/*
 	 * Debug exception handling

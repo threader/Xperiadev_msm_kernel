@@ -3154,7 +3154,7 @@ void blk_finish_plug(struct blk_plug *plug)
 }
 EXPORT_SYMBOL(blk_finish_plug);
 
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_RUNTIME
 /**
  * blk_pm_runtime_init - Block layer runtime PM initialization routine
  * @q: the queue of the device
@@ -3295,30 +3295,6 @@ void blk_post_runtime_resume(struct request_queue *q, int err)
 	spin_unlock_irq(q->queue_lock);
 }
 EXPORT_SYMBOL(blk_post_runtime_resume);
-
-/**
- * blk_set_runtime_active - Force runtime status of the queue to be active
- * @q: the queue of the device
- *
- * If the device is left runtime suspended during system suspend the resume
- * hook typically resumes the device and corrects runtime status
- * accordingly. However, that does not affect the queue runtime PM status
- * which is still "suspended". This prevents processing requests from the
- * queue.
- *
- * This function can be used in driver's resume hook to correct queue
- * runtime PM status and re-enable peeking requests from the queue. It
- * should be called before first request is added to the queue.
- */
-void blk_set_runtime_active(struct request_queue *q)
-{
-	spin_lock_irq(q->queue_lock);
-	q->rpm_status = RPM_ACTIVE;
-	pm_runtime_mark_last_busy(q->dev);
-	pm_request_autosuspend(q->dev);
-	spin_unlock_irq(q->queue_lock);
-}
-EXPORT_SYMBOL(blk_set_runtime_active);
 #endif
 
 int __init blk_dev_init(void)
