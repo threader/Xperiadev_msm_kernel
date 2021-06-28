@@ -208,9 +208,38 @@ static void __init smp_build_mpidr_hash(void)
 }
 #endif
 
-static void __init setup_processor(void)
+#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
+#include <asm/mmu_context.h>
+
+DEFINE_PER_CPU_READ_MOSTLY(struct bp_hardening_data, bp_hardening_data);
+
+static void __maybe_unused __install_bp_hardening_cb(bp_hardening_cb_t fn)
 {
-	struct cpu_info *cpu_info;
+	__this_cpu_write(bp_hardening_data.fn, fn);
+}
+
+static void __maybe_unused install_bp_hardening_cb(bp_hardening_cb_t fn)
+{
+	__install_bp_hardening_cb(fn);
+}
+
+void enable_psci_bp_hardening(void *data)
+{
+	switch(read_cpuid_part_number()) {
+	case ARM_CPU_PART_CORTEX_A57:
+	case ARM_CPU_PART_CORTEX_A72:
+		if (psci_ops.get_version)
+			install_bp_hardening_cb(
+				(bp_hardening_cb_t)psci_ops.get_version);
+		else
+			install_bp_hardening_cb(
+				(bp_hardening_cb_t)psci_apply_bp_hardening);
+	}
+}
+#endif	/* CONFIG_HARDEN_BRANCH_PREDICTOR */
+
+void __init setup_cpu_features(void)
+{
 	u64 features, block;
 	u32 cwg;
 	int cls;
