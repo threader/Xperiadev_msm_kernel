@@ -2722,7 +2722,7 @@ static int dwc3_msm_power_set_property_usb(struct power_supply *psy,
 		mdwc->current_max = val->intval;
 		break;
 #ifdef CONFIG_SONY_USB_EXTENSIONS
-	case POWER_SUPPLY_PROP_TYPE:
+	case POWER_SUPPLY_PROP_REAL_TYPE:
 		if (mdwc->otg_xceiv) {
 			if ((mdwc->ext_inuse || mdwc->ext_switching) &&
 			    (POWER_SUPPLY_TYPE_UNKNOWN != val->intval))
@@ -2734,11 +2734,11 @@ static int dwc3_msm_power_set_property_usb(struct power_supply *psy,
 		if (psy->type == POWER_SUPPLY_TYPE_USB_HVDCP &&
 				val->intval == POWER_SUPPLY_TYPE_USB_DCP)
 			return 0;
+
 		psy->type = val->intval;
 
 		switch (psy->type) {
-#endif
-#if 0
+#else
 	case POWER_SUPPLY_PROP_REAL_TYPE:
 		mdwc->usb_supply_type = val->intval;
 		/*
