@@ -35,6 +35,8 @@ extern int msm_krait_need_wfe_fixup;
 #define WFE(cond)	__ALT_SMP_ASM("wfe" cond, "nop")
 #endif
 
+#define SEV		__ALT_SMP_ASM(WASM(sev), WASM(nop))
+
 /*
  * The fixup involves disabling interrupts during execution of the WFE
  * instruction. This could potentially lead to deadlock if a thread is trying
