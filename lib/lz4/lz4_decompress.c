@@ -288,7 +288,7 @@ static int lz4_uncompress_unknownoutputsize(const char *source, char *dest,
 
 	/* write overflow error detected */
 _output_error:
-	return (int) (-(((char *) ip) - source));
+	return -1;
 }
 
 int lz4_decompress(const unsigned char *src, size_t *src_len,
