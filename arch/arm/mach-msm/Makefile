@@ -29,7 +29,7 @@ obj-$(CONFIG_QPNP_BMS) += bms-batterydata.o bms-batterydata-desay.o
 obj-$(CONFIG_QPNP_BMS) += bms-batterydata-qrd-4v35-2000mah.o bms-batterydata-qrd-4v2-1300mah.o
 obj-$(CONFIG_ARCH_APQ8084) += board-8084.o board-8084-gpiomux.o
 obj-$(CONFIG_ARCH_APQ8084) += clock-8084.o clock-mdss-8974.o
-obj-$(CONFIG_ARCH_MSM8974) += board-8974.o
+#obj-$(CONFIG_ARCH_MSM8974) += board-8974.o
 ifndef CONFIG_MACH_LGE
 obj-$(CONFIG_ARCH_MSM8974) += board-8974.o board-8974-gpiomux.o
 endif
@@ -83,10 +83,10 @@ else ifdef CONFIG_MACH_SONY_HONAMI_ROW
 	obj-$(CONFIG_MACH_SONY_HONAMI_ROW) += board-sony_rhine_honami_row-gpiomux.o
 else ifdef CONFIG_MACH_SONY_AMAMI_ROW
 	obj-$(CONFIG_MACH_SONY_AMAMI_ROW) += board-sony_rhine_amami_row-gpiomux.o
-else
-ifneq ($(CONFIG_MACH_LGE),y)
-	obj-$(CONFIG_ARCH_MSM8974) += board-8974-gpiomux.o
-endif
+#else
+#ifneq ($(CONFIG_MACH_LGE),y)
+#	obj-$(CONFIG_ARCH_MSM8974) += board-8974-gpiomux.o
+#endif
 endif
 
 obj-$(CONFIG_MACH_SONY_SHINANO) += board-sony_shinano-gpiomux-ref.o board-sony_shinano-nfc.o
