@@ -605,6 +605,9 @@ config MACH_SONY_SEAGULL
 	  If you enable this config,
 	  Please use SONY Mobile source tree.
 
+
+source "arch/arm/mach-msm/lge/Kconfig"
+
 config MSM_STACKED_MEMORY
 	bool "Stacked Memory"
 	default y
@@ -622,6 +625,7 @@ config PHYS_OFFSET
 	default "0x0b600000" if ARCH_FSM9900
 	default "0x0b600000" if ARCH_FSM9010
 	default "0x00000000" if ARCH_MDM9630
+	default "0x00000000" if ARCH_MSMSAMARIUM
 	default "0x80000000" if ARCH_MDM9640
 	default "0x80000000" if ARCH_MDMCALIFORNIUM
 	default "0x80000000" if ARCH_MSMVPIPA
