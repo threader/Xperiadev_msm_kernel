@@ -277,7 +277,8 @@ static int wifi_plat_dev_drv_probe(struct platform_device *pdev)
 	DHD_WARN(dhd_wifi_platdata != NULL, return -ENODEV;);
 	DHD_WARN(dhd_wifi_platdata->num_adapters == 1, return -ENODEV;);
 	adapter = &dhd_wifi_platdata->adapters[0];
-#if !defined(CONFIG_MACH_SONY_SHINANO) && defined(CONFIG_WIFI_CONTROL_FUNC)
+
+#if !defined(CONFIG_MACH_SONY_SHINANO) && defined(CONFIG_WIFI_CONTROL_FUNC) && !defined(CONFIG_MACH_LGE)
 	adapter->wifi_plat_data = (void *)&somc_wifi_control;
 #else
 	adapter->wifi_plat_data = (struct wifi_platform_data *)(pdev->dev.platform_data);
@@ -290,8 +291,8 @@ static int wifi_plat_dev_drv_probe(struct platform_device *pdev)
 		adapter->irq_num = resource->start;
 		adapter->intr_flags = resource->flags & IRQF_TRIGGER_MASK;
 	}
-#if !defined(CONFIG_MACH_SONY_SHINANO) && defined(CONFIG_WIFI_CONTROL_FUNC)
-	somc_wifi_init(pdev);
+#if !defined(CONFIG_MACH_SONY_SHINANO) && defined(CONFIG_WIFI_CONTROL_FUNC) && !defined(CONFIG_MACH_LGE)
+	somc_wifi_init(pdev); /* or do i just !define this ...*/
 	gpio = of_get_gpio(pdev->dev.of_node, 1);
 	if (gpio < 0) {
 		DHD_ERROR(("%s gpio information is incorrect\n", __FUNCTION__));
