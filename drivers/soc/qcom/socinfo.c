@@ -63,6 +63,9 @@ enum {
 	HW_PLATFORM_RCM	= 21,
 	HW_PLATFORM_STP = 23,
 	HW_PLATFORM_SBC = 24,
+#ifdef CONFIG_MACH_LGE
+	HW_PLATFORM_HAMMERHEAD = 150,
+#endif
 	HW_PLATFORM_INVALID
 };
 
@@ -83,6 +86,9 @@ const char *hw_platform[] = {
 	[HW_PLATFORM_DTV] = "DTV",
 	[HW_PLATFORM_STP] = "STP",
 	[HW_PLATFORM_SBC] = "SBC",
+#ifdef CONFIG_MACH_LGE
+	[HW_PLATFORM_HAMMERHEAD] = "HAMMERHEAD",
+#endif
 };
 
 enum {

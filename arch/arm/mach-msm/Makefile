@@ -104,6 +104,9 @@ obj-$(CONFIG_ARCH_MSM8226) += gpiomux-v2.o gpiomux.o
 obj-$(CONFIG_ARCH_MSM8610) += gpiomux-v2.o gpiomux.o
 obj-$(CONFIG_ARCH_APQ8084) += gpiomux-v2.o gpiomux.o
 obj-$(CONFIG_ARCH_FSM9900) += gpiomux-v2.o gpiomux.o
+ifeq ($(CONFIG_MACH_LGE),y)
+obj-$(CONFIG_MSM_NATIVE_RESTART) += restart.o
+endif
 
 obj-$(CONFIG_MSM_CACHE_ERP) += cache_erp.o
 

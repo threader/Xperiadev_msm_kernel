@@ -30,6 +30,9 @@
 #include <soc/qcom/memory_dump.h>
 #include <soc/qcom/watchdog.h>
 #include <linux/kmemleak.h>
+#ifdef CONFIG_LGE_HANDLE_PANIC
+#include <mach/lge_handle_panic.h>
+#endif
 
 #define MODULE_NAME "msm_watchdog"
 #define WDT0_ACCSCSSNBARK_INT 0
@@ -96,6 +99,19 @@ module_param(enable, int, 0);
  */
 static long WDT_HZ = 32765;
 module_param(WDT_HZ, long, 0);
+#ifdef CONFIG_LGE_HANDLE_PANIC
+static void __iomem *msm_timer0_base;
+
+void __iomem *wdt_timer_get_timer0_base(void)
+{
+	return msm_timer0_base;
+}
+
+static void wdt_timer_set_timer0_base(void __iomem * iomem)
+{
+	msm_timer0_base = iomem;
+}
+#endif
 
 /*
  * On the kernel command line specify
@@ -455,6 +471,9 @@ static irqreturn_t wdog_bark_handler(int irq, void *dev_id)
 		wdog_dd->last_pet, nanosec_rem / 1000);
 	if (wdog_dd->do_ipi_ping)
 		dump_cpu_alive_mask(wdog_dd);
+#ifdef CONFIG_LGE_HANDLE_PANIC
+	lge_set_restart_reason(LGE_RB_MAGIC | LGE_ERR_TZ | LGE_ERR_TZ_WDT_BARK);
+#endif
 	msm_trigger_wdog_bite();
 	panic("Failed to cause a watchdog bite! - Falling back to kernel panic!");
 	return IRQ_HANDLED;
@@ -675,7 +694,9 @@ static int msm_wdog_dt_to_pdata(struct platform_device *pdev,
 				__func__);
 		return -ENXIO;
 	}
-
+#ifdef CONFIG_LGE_HANDLE_PANIC
+	wdt_timer_set_timer0_base(pdata->base);
+#endif
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
 					   "wdt-absent-base");
 	if (res) {
