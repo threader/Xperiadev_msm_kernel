@@ -40,9 +40,11 @@
 #include <linux/wlan_plat.h>
 #include<linux/regulator/consumer.h>
 #include<linux/of_gpio.h>
+#ifndef CONFIG_MACH_LGE
 extern int somc_wifi_init(struct platform_device *pdev);
 extern void somc_wifi_deinit(struct platform_device *pdev);
 extern struct wifi_platform_data somc_wifi_control;
+#endif
 #endif
 
 #define WIFI_PLAT_NAME		"bcmdhd_wlan"
@@ -331,9 +333,10 @@ static int wifi_plat_dev_drv_remove(struct platform_device *pdev)
 		wifi_platform_bus_enumerate(adapter, FALSE);
 #endif /* BCMPCIE */
 	}
-
+#if !defined(CONFIG_MACH_LGE)
 #if !defined(CONFIG_MACH_SONY_SHINANO) && defined(CONFIG_WIFI_CONTROL_FUNC)
 	somc_wifi_deinit(pdev);
+#endif
 #endif
 	return 0;
 }
