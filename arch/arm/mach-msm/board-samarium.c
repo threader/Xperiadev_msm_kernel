@@ -59,7 +59,7 @@ void __init msmsamarium_reserve(void)
 
 static void __init msmsamarium_early_memory(void)
 {
-	of_scan_flat_dt(dt_scan_for_memory_hole, NULL);
+//	of_scan_flat_dt(dt_scan_for_memory_hole, NULL);
 }
 
 /*

@@ -52,12 +52,21 @@
 #include <linux/qcom_iommu.h>
 #include <linux/msm_iommu_domains.h>
 
+/* HACK: preventing displaying garbage in off-mode charge */
+#ifdef CONFIG_MACH_LGE
+#include <mach/board_lge.h>
+#endif
+
 #include "mdss_fb.h"
 #include "mdss_mdp_splash_logo.h"
 #include "mdss_mdp.h"
 #include "mdss_dsi.h"
 #define CREATE_TRACE_POINTS
 #include "mdss_debug.h"
+
+#ifdef CONFIG_LGE_HANDLE_PANIC
+#include <mach/lge_handle_panic.h>
+#endif
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 #define MDSS_FB_NUM 3
@@ -2120,7 +2129,15 @@ static int mdss_fb_blank(int blank_mode, struct fb_info *info)
 		mdss_fb_set_mdp_sync_pt_threshold(mfd, mfd->panel.type);
 		pdata->panel_info.is_lpm_mode = false;
 	}
-
+#ifdef CONFIG_MACH_LGE
+	if (lge_get_boot_mode() == LGE_BOOT_MODE_CHARGER) {
+		/* HACK: preventing displaying garbage in off-mode charge */
+		if (blank_mode == FB_BLANK_UNBLANK &&
+				mfd->panel_info->type == MIPI_CMD_PANEL) {
+			msleep(33);
+		}
+	}
+#endif
 	return mdss_fb_blank_sub(blank_mode, info, mfd->op_enable);
 }
 
@@ -2489,6 +2506,13 @@ static int mdss_fb_alloc_fbmem_iommu(struct msm_fb_data_type *mfd, int dom)
 
 	pr_debug("alloc 0x%zxB @ (%pa phys) (0x%pK virt) (%pa iova) for fb%d\n",
 		 size, &phys, virt, &mfd->iova, mfd->index);
+
+#ifdef CONFIG_LGE_HANDLE_PANIC
+	/* save fb1 address for lge crash handler display buffer */
+	lge_set_fb1_addr((unsigned int)(phys +
+				(mfd->fbi->fix.line_length *
+				 mfd->fbi->var.yres)));
+#endif
 
 	mfd->fbi->screen_base = virt;
 	mfd->fbi->fix.smem_start = phys;

@@ -91,8 +91,9 @@ endif
 
 obj-$(CONFIG_MACH_SONY_SHINANO) += board-sony_shinano-gpiomux-ref.o board-sony_shinano-nfc.o
 obj-$(CONFIG_MACH_SONY_RHINE) += board-sony_rhine-gpiomux-ref.o
+ifneq ($(CONFIG_MACH_LGE),y)
 obj-$(CONFIG_ARCH_MSM8974) += sony_gpiomux.o bms-batterydata-oem.o
-
+endif
 obj-$(CONFIG_MACH_LGE) += lge/
 
 CFLAGS_msm_vibrator.o += -Idrivers/staging/android

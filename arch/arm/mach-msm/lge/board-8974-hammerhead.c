@@ -89,7 +89,7 @@ static struct of_dev_auxdata msm8974_auxdata_lookup[] __initdata = {
 
 static void __init msm8974_early_memory(void)
 {
-	of_scan_flat_dt(dt_scan_for_memory_hole, NULL);
+//	of_scan_flat_dt(dt_scan_for_memory_hole, NULL);
 }
 
 void __init msm_8974_reserve(void)

@@ -3530,7 +3530,10 @@ static void sdhci_msm_cmdq_init(struct sdhci_host *host,
 }
 #endif
 
+#if defined CONFIG_WIFI_CONTROL_FUNC && !defined (CONFIG_MACH_LGE)
 extern void somc_wifi_mmc_host_register(struct mmc_host *host);
+#endif
+
 
 static int sdhci_msm_probe(struct platform_device *pdev)
 {
@@ -3979,7 +3982,9 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 #ifdef CONFIG_WIFI_CONTROL_FUNC
 	if (msm_host->pdata->use_for_wifi) {
 		msm_host->mmc->caps &= ~MMC_CAP_NEEDS_POLL;
+#ifndef CONFIG_MACH_LGE
 		somc_wifi_mmc_host_register(msm_host->mmc);
+#endif
 	}
 #endif
 
