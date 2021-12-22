@@ -84,7 +84,9 @@ else ifdef CONFIG_MACH_SONY_HONAMI_ROW
 else ifdef CONFIG_MACH_SONY_AMAMI_ROW
 	obj-$(CONFIG_MACH_SONY_AMAMI_ROW) += board-sony_rhine_amami_row-gpiomux.o
 else
+ifneq ($(CONFIG_MACH_LGE),y)
 	obj-$(CONFIG_ARCH_MSM8974) += board-8974-gpiomux.o
+endif
 endif
 
 obj-$(CONFIG_MACH_SONY_SHINANO) += board-sony_shinano-gpiomux-ref.o board-sony_shinano-nfc.o

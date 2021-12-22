@@ -125,23 +125,6 @@ out:
 	return 0;
 }
 
-/* Function to remove any meminfo blocks which are of size zero */
-static void merge_meminfo(void)
-{
-	int i = 0;
-
-	while (i < meminfo.nr_banks) {
-		struct membank *bank = &meminfo.bank[i];
-
-		if (bank->size == 0) {
-			memmove(bank, bank + 1,
-			(meminfo.nr_banks - i) * sizeof(*bank));
-			meminfo.nr_banks--;
-			continue;
-		}
-		i++;
-	}
-}
 
 /*
  * Function to scan the device tree and adjust the meminfo table to
@@ -189,35 +172,3 @@ int __init dt_scan_for_memory_hole(unsigned long node, const char *uname,
 out:
 	return 0;
 }
-
-/*
- * Split the memory bank to reflect the hole, if present,
- * using the start and end of the memory hole.
- */
-void adjust_meminfo(unsigned long start, unsigned long size)
-{
-	int i;
-
-	for (i = 0; i < meminfo.nr_banks; i++) {
-		struct membank *bank = &meminfo.bank[i];
-
-		if (((start + size) <= (bank->start + bank->size)) &&
-			(start >= bank->start)) {
-			memmove(bank + 1, bank,
-				(meminfo.nr_banks - i) * sizeof(*bank));
-			meminfo.nr_banks++;
-			i++;
-
-			bank->size = start - bank->start;
-			bank[1].start = (start + size);
-			bank[1].size -= (bank->size + size);
-			bank[1].highmem = 0;
-			merge_meminfo();
-		}
-	}
-}
-
-/* Provide a string that anonymous device tree allocations (those not
- * directly associated with any driver) can use for their "compatible"
- * field */
-EXPORT_COMPAT("qcom,msm-contig-mem");

@@ -6,6 +6,7 @@ menu "LGE Board Selection"
 config MACH_DORY
 	depends on ARCH_MSM8226
 	select MACH_LGE
+	select MSM_NATIVE_RESTART
 	bool "APQ8026 DORY"
 	help
 	  Support for the LGE APQ8026 DORY.
@@ -13,6 +14,7 @@ config MACH_DORY
 config MACH_MSM8974_HAMMERHEAD
 	depends on ARCH_MSM8974
 	select MACH_LGE
+	select MSM_NATIVE_RESTART
 	bool "MSM8974 HAMMERHEAD"
 	help
 	  Support for the LGE MSM8974 HAMMERHEAD.

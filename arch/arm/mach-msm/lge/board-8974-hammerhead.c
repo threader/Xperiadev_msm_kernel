@@ -44,6 +44,7 @@
 #include "../clock.h"
 #include "../platsmp.h"
 #include <mach/board_lge.h>
+#include <mach/restart.h>
 
 static struct of_dev_auxdata msm8974_auxdata_lookup[] __initdata = {
 	OF_DEV_AUXDATA("qcom,hsusb-otg", 0xF9A55000, \
