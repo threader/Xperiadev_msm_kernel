@@ -291,8 +291,10 @@ static int wifi_plat_dev_drv_probe(struct platform_device *pdev)
 		adapter->irq_num = resource->start;
 		adapter->intr_flags = resource->flags & IRQF_TRIGGER_MASK;
 	}
-#if !defined(CONFIG_MACH_SONY_SHINANO) && defined(CONFIG_WIFI_CONTROL_FUNC) && !defined(CONFIG_MACH_LGE)
+#if !defined(CONFIG_MACH_SONY_SHINANO) && defined(CONFIG_WIFI_CONTROL_FUNC)
+#if !defined(CONFIG_MACH_LGE)
 	somc_wifi_init(pdev); /* or do i just !define this ...*/
+#endif
 	gpio = of_get_gpio(pdev->dev.of_node, 1);
 	if (gpio < 0) {
 		DHD_ERROR(("%s gpio information is incorrect\n", __FUNCTION__));
