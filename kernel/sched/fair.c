@@ -4526,8 +4526,9 @@ static void throttle_cfs_rq(struct cfs_rq *cfs_rq)
 		if (dequeue)
 			dequeue_entity(qcfs_rq, se, DEQUEUE_SLEEP);
 		qcfs_rq->h_nr_running -= task_delta;
+#ifdef CONFIG_SCHED_HMP  
 		dec_throttled_cfs_rq_hmp_stats(&qcfs_rq->hmp_stats, cfs_rq);
-
+#endif
 		if (qcfs_rq->load.weight)
 			dequeue = 0;
 	}
@@ -4535,7 +4536,9 @@ static void throttle_cfs_rq(struct cfs_rq *cfs_rq)
 	if (!se) {
 		sched_update_nr_prod(cpu_of(rq), task_delta, false);
 		rq->nr_running -= task_delta;
+#ifdef CONFIG_SCHED_HMP  
 		dec_throttled_cfs_rq_hmp_stats(&rq->hmp_stats, cfs_rq);
+#endif
 	}
 
 	cfs_rq->throttled = 1;
@@ -4587,8 +4590,9 @@ void unthrottle_cfs_rq(struct cfs_rq *cfs_rq)
 		if (enqueue)
 			enqueue_entity(cfs_rq, se, ENQUEUE_WAKEUP);
 		cfs_rq->h_nr_running += task_delta;
+#ifdef CONFIG_SCHED_HMP
 		inc_throttled_cfs_rq_hmp_stats(&cfs_rq->hmp_stats, tcfs_rq);
-
+#endif
 		if (cfs_rq_throttled(cfs_rq))
 			break;
 	}
@@ -4596,7 +4600,9 @@ void unthrottle_cfs_rq(struct cfs_rq *cfs_rq)
 	if (!se) {
 		sched_update_nr_prod(cpu_of(rq), task_delta, true);
 		rq->nr_running += task_delta;
+#ifdef CONFIG_SCHED_HMP
 		inc_throttled_cfs_rq_hmp_stats(&rq->hmp_stats, tcfs_rq);
+#endif
 	}
 
 	/* determine whether we need to wake up potentially idle cpu */
@@ -4942,7 +4948,9 @@ static void init_cfs_rq_runtime(struct cfs_rq *cfs_rq)
 {
 	cfs_rq->runtime_enabled = 0;
 	INIT_LIST_HEAD(&cfs_rq->throttled_list);
+#ifdef CONFIG_SCHED_HMP
 	init_cfs_rq_hmp_stats(cfs_rq);
+#endif
 }
 
 /* requires cfs_b->lock, may release to reprogram timer */
@@ -5114,16 +5122,18 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 		if (cfs_rq_throttled(cfs_rq))
 			break;
 		cfs_rq->h_nr_running++;
+#ifdef CONFIG_SCHED_HMP
 		inc_cfs_rq_hmp_stats(cfs_rq, p, 1);
-
+#endif
 		flags = ENQUEUE_WAKEUP;
 	}
 
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		cfs_rq->h_nr_running++;
+#ifdef CONFIG_SCHED_HMP
 		inc_cfs_rq_hmp_stats(cfs_rq, p, 1);
-
+#endif
 		if (cfs_rq_throttled(cfs_rq))
 			break;
 
@@ -5134,7 +5144,9 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	if (!se) {
 		update_rq_runnable_avg(rq, rq->nr_running);
 		inc_nr_running(rq);
+#ifdef CONFIG_SCHED_HMP
 		inc_rq_hmp_stats(rq, p, 1);
+#endif
 	}
 	hrtick_update(rq);
 }
@@ -5165,8 +5177,9 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 		if (cfs_rq_throttled(cfs_rq))
 			break;
 		cfs_rq->h_nr_running--;
+#ifdef CONFIG_SCHED_HMP
 		dec_cfs_rq_hmp_stats(cfs_rq, p, 1);
-
+#endif
 		/* Don't dequeue parent if it has other entities besides us */
 		if (cfs_rq->load.weight) {
 			/*
@@ -5186,8 +5199,9 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		cfs_rq->h_nr_running--;
+#ifdef CONFIG_SCHED_HMP
 		dec_cfs_rq_hmp_stats(cfs_rq, p, 1);
-
+#endif
 		if (cfs_rq_throttled(cfs_rq))
 			break;
 
@@ -5198,7 +5212,9 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	if (!se) {
 		dec_nr_running(rq);
 		update_rq_runnable_avg(rq, 1);
+#ifdef CONFIG_SCHED_HMP
 		dec_rq_hmp_stats(rq, p, 1);
+#endif
 	}
 	hrtick_update(rq);
 }
