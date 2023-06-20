@@ -231,44 +231,6 @@ static int lpm_cpu_callback(struct notifier_block *cpu_nb,
 	return NOTIFY_OK;
 }
 
-void lpm_cluster_mode_disable(void)
-{
-	struct list_head *list;
-	int i;
-
-	 list_for_each(list, &lpm_root_node->child) {
-		struct lpm_cluster *n;
-
-		n = list_entry(list, typeof(*n), list);
-		if (!n)
-			return;
-		for (i = 0; i < n->nlevels; i++) {
-			struct lpm_level_avail *l = &n->levels[i].available;
-
-			l->idle_enabled = 0;
-		}
-	}
-}
-
-void lpm_cluster_mode_enable(void)
-{
-	struct list_head *list;
-	int i;
-
-	 list_for_each(list, &lpm_root_node->child) {
-		struct lpm_cluster *n;
-
-		n = list_entry(list, typeof(*n), list);
-		if (!n)
-			return;
-		for (i = 0; i < n->nlevels; i++) {
-			struct lpm_level_avail *l = &n->levels[i].available;
-
-			l->idle_enabled = 1;
-		}
-	}
-}
-
 static enum hrtimer_restart lpm_hrtimer_cb(struct hrtimer *h)
 {
 	return HRTIMER_NORESTART;
@@ -1368,15 +1330,22 @@ static int lpm_cpuidle_enter(struct cpuidle_device *dev,
 		struct cpuidle_driver *drv, int index)
 {
 	struct lpm_cluster *cluster = per_cpu(cpu_cluster, dev->cpu);
+	int64_t time = ktime_to_ns(ktime_get());
 	bool success = true;
 	int idx = cpu_power_select(dev, cluster->cpu, &index);
 	const struct cpumask *cpumask = get_cpu_mask(dev->cpu);
-	int64_t start_time = ktime_to_ns(ktime_get()), end_time;
 	struct power_params *pwr_params;
 
 	if (idx < 0) {
 		local_irq_enable();
 		return -EPERM;
+	}
+
+	trace_cpu_idle_rcuidle(idx, dev->cpu);
+
+	if (need_resched()) {
+		dev->last_residency = 0;
+		goto exit;
 	}
 
 	pwr_params = &cluster->cpu->levels[idx].pwr;
@@ -1388,14 +1357,6 @@ static int lpm_cpuidle_enter(struct cpuidle_device *dev,
 
 	cluster_prepare(cluster, cpumask, idx, true);
 	lpm_stats_cpu_enter(idx);
-	trace_cpu_idle_rcuidle(idx, dev->cpu);
-
-	if (need_resched()) {
-		dev->last_residency = 0;
-		goto exit;
-	}
-
-
 	if (idx > 0)
 		update_debug_pc_event(CPU_ENTER, idx, 0xdeaffeed,
 			gic_return_irq_pending(), true);
@@ -1413,12 +1374,14 @@ static int lpm_cpuidle_enter(struct cpuidle_device *dev,
 	cpu_unprepare(cluster, idx, true);
 
 	sched_set_cpu_cstate(smp_processor_id(), 0, 0, 0);
+
+	time = ktime_to_ns(ktime_get()) - time;
+	do_div(time, 1000);
+	dev->last_residency = (int)time;
 	trace_cpu_idle_exit(idx, success);
 	update_history(dev, idx);
 
 exit:
-	end_time = ktime_to_ns(ktime_get()) - start_time;
-	dev->last_residency = do_div(end_time, 1000);
 	trace_cpu_idle_rcuidle(PWR_EVENT_EXIT, dev->cpu);
 	local_irq_enable();
 	if (lpm_prediction) {
