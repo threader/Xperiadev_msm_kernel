@@ -795,7 +795,7 @@ config BUILD_ARM64_APPENDED_DTB_IMAGE
 
 config BUILD_ARM64_UNCOMPRESSED_APPENDED_DTB_IMAGE
 	bool "Build a concatenated Image/dtb by default"
-	depends on OFS
+	depends on OF
 	help
 	  Enabling this option will cause a concatenated Image and list of
 	  DTBs to be built by default (instead of a standalone Image.gz.)
