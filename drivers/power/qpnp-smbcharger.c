@@ -3797,6 +3797,7 @@ static void check_battery_type(struct smbchg_chip *chip)
 	}
 }
 
+
 static int smbchg_otg_regulator_enable(struct regulator_dev *rdev)
 {
 	int rc = 0;
@@ -6041,40 +6042,17 @@ static void smbchg_external_power_changed(struct power_supply *psy)
 	read_usb_type(chip, &usb_type_name, &usb_supply_type);
 #ifdef CONFIG_QPNP_SMBCHARGER_EXTENSION
 	rc = chip->usb_psy->get_property(chip->usb_psy,
-				POWER_SUPPLY_PROP_REAL_TYPE, &prop);
+				POWER_SUPPLY_PROP_TYPE, &prop);
+	if (rc == 0)
+		type = prop.intval;
 
-	read_usb_type(chip, &usb_type_name, &usb_supply_type);
-
-	if (!rc && usb_supply_type == POWER_SUPPLY_TYPE_USB &&
-			prop.intval != POWER_SUPPLY_TYPE_USB &&
-			is_usb_present(chip)) {
-		/* incorrect type detected */
-		pr_smb(PR_MISC,
-			"Incorrect charger type detetced - rerun APSD\n");
-		chip->hvdcp_3_det_ignore_uv = true;
-		pr_smb(PR_MISC, "setting usb psy dp=f dm=f\n");
-		power_supply_set_dp_dm(chip->usb_psy,
-				POWER_SUPPLY_DP_DM_DPF_DMF);
-		rc = rerun_apsd(chip);
-		if (rc)
-			pr_err("APSD re-run failed\n");
-		chip->hvdcp_3_det_ignore_uv = false;
-		if (!is_src_detect_high(chip)) {
-			pr_smb(PR_MISC, "Charger removed - force removal\n");
-			update_usb_status(chip, is_usb_present(chip), true);
-			return;
-		}
-
-		read_usb_type(chip, &usb_type_name, &usb_supply_type);
-		if (usb_supply_type == POWER_SUPPLY_TYPE_USB_DCP) {
-			schedule_delayed_work(&chip->hvdcp_det_work,
-				msecs_to_jiffies(HVDCP_NOTIFY_MS));
-			if (chip->parallel.use_parallel_aicl) {
-				INIT_COMPLETION(chip->hvdcp_det_done);
-				pr_smb(PR_MISC, "init hvdcp_det_done\n");
-			}
-			smbchg_change_usb_supply_type(chip, usb_supply_type);
-		}
+	if (usb_supply_type == POWER_SUPPLY_TYPE_USB &&
+			type != POWER_SUPPLY_TYPE_UNKNOWN &&
+			type != usb_supply_type) {
+		pr_smb(PR_SOMC,
+			"claimed defferent type, rerun apsd, type %d -> %d\n",
+							usb_supply_type, type);
+		goto rerun_apsd;
 	}
 #endif
 	if (usb_supply_type != POWER_SUPPLY_TYPE_USB)

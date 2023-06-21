@@ -2721,8 +2721,8 @@ static int dwc3_msm_power_set_property_usb(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CURRENT_MAX:
 		mdwc->current_max = val->intval;
 		break;
+	case POWER_SUPPLY_PROP_TYPE:
 #ifdef CONFIG_SONY_USB_EXTENSIONS
-	case POWER_SUPPLY_PROP_REAL_TYPE:
 		if (mdwc->otg_xceiv) {
 			if ((mdwc->ext_inuse || mdwc->ext_switching) &&
 			    (POWER_SUPPLY_TYPE_UNKNOWN != val->intval))
@@ -2734,28 +2734,10 @@ static int dwc3_msm_power_set_property_usb(struct power_supply *psy,
 		if (psy->type == POWER_SUPPLY_TYPE_USB_HVDCP &&
 				val->intval == POWER_SUPPLY_TYPE_USB_DCP)
 			return 0;
-
+#endif
 		psy->type = val->intval;
 
 		switch (psy->type) {
-#else
-	case POWER_SUPPLY_PROP_REAL_TYPE:
-		mdwc->usb_supply_type = val->intval;
-		/*
-		 * Update TYPE property to DCP for HVDCP/HVDCP3 charger types
-		 * so that they can be recongized as AC chargers by healthd.
-		 * Don't report UNKNOWN charger type to prevent healthd missing
-		 * detecting this power_supply status change.
-		 */
-		if (mdwc->usb_supply_type == POWER_SUPPLY_TYPE_USB_HVDCP_3
-			|| mdwc->usb_supply_type == POWER_SUPPLY_TYPE_USB_HVDCP)
-			psy->type = POWER_SUPPLY_TYPE_USB_DCP;
-		else if (mdwc->usb_supply_type == POWER_SUPPLY_TYPE_UNKNOWN)
-			psy->type = POWER_SUPPLY_TYPE_USB;
-		else
-			psy->type = mdwc->usb_supply_type;
-		switch (mdwc->usb_supply_type) {
-#endif
 		case POWER_SUPPLY_TYPE_USB:
 			mdwc->charger.chg_type = DWC3_SDP_CHARGER;
 			break;
@@ -2832,6 +2814,7 @@ static void dwc3_msm_external_power_changed(struct power_supply *psy)
 		dwc3_start_chg_det(&mdwc->charger, false);
 		mdwc->ext_vbus_psy->get_property(mdwc->ext_vbus_psy,
 					POWER_SUPPLY_PROP_CURRENT_MAX, &ret);
+		power_supply_set_current_limit(&mdwc->usb_psy, ret.intval);
 	}
 
 #ifdef CONFIG_SONY_USB_EXTENSIONS
@@ -2849,6 +2832,7 @@ dwc3_msm_property_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_USB_OTG:
 	case POWER_SUPPLY_PROP_PRESENT:
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
+	case POWER_SUPPLY_PROP_REAL_TYPE:
 		return 1;
 	default:
 		break;

@@ -501,6 +501,19 @@ static inline int mdss_fb_validate_split(int left, int right,
 	return rc;
 }
 
+static void mdss_fb_parse_dt_split(struct msm_fb_data_type *mfd)
+{
+	u32 data[2] = {0};
+	struct platform_device *pdev = mfd->pdev;
+
+	of_property_read_u32_array(pdev->dev.of_node,
+		"qcom,mdss-fb-split", data, 2);
+
+	if (!mdss_fb_validate_split(data[0], data[1], mfd))
+		pr_info_once("device tree split left=%d right=%d\n",
+			data[0], data[1]);
+}
+
 static ssize_t mdss_fb_store_split(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t len)
 {
@@ -508,10 +521,13 @@ static ssize_t mdss_fb_store_split(struct device *dev,
 	struct fb_info *fbi = dev_get_drvdata(dev);
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
 
-	if (2 != sscanf(buf, "%d %d", &data[0], &data[1]))
+	if (2 != sscanf(buf, "%d %d", &data[0], &data[1])) {
 		pr_debug("Not able to read split values\n");
-	else if (!mdss_fb_validate_split(data[0], data[1], mfd))
-		pr_debug("split left=%d right=%d\n", data[0], data[1]);
+	} else if (!mdss_fb_validate_split(data[0], data[1], mfd)) {
+		mfd->mdss_fb_split_stored = 1;
+		pr_debug("sys split_left=%d split_right=%d\n",
+					data[0], data[1]);
+	}
 
 	return len;
 }
@@ -529,11 +545,17 @@ static ssize_t mdss_fb_show_split(struct device *dev,
 
 static void mdss_fb_get_split(struct msm_fb_data_type *mfd)
 {
+	if (mfd->index != 0)
+		return;
+
+	if (!mfd->mdss_fb_split_stored)
+		mdss_fb_parse_dt_split(mfd);
+
 	if ((mfd->split_mode == MDP_SPLIT_MODE_NONE) &&
 	    (mfd->split_fb_left && mfd->split_fb_right))
 		mfd->split_mode = MDP_DUAL_LM_SINGLE_DISPLAY;
 
-	pr_debug("split fb%d left=%d right=%d mode=%d\n", mfd->index,
+	pr_debug("split framebuffer left=%d right=%d mode=%d\n",
 		mfd->split_fb_left, mfd->split_fb_right, mfd->split_mode);
 }
 
@@ -874,7 +896,7 @@ static DEVICE_ATTR(show_blank_event, S_IRUGO, mdss_mdp_show_blank_event, NULL);
 static DEVICE_ATTR(idle_time, S_IRUGO | S_IWUSR | S_IWGRP,
 	mdss_fb_get_idle_time, mdss_fb_set_idle_time);
 static DEVICE_ATTR(idle_notify, S_IRUGO, mdss_fb_get_idle_notify, NULL);
-static DEVICE_ATTR(msm_fb_panel_info, S_IRUSR | S_IRGRP, mdss_fb_get_panel_info, NULL);
+static DEVICE_ATTR(msm_fb_panel_info, S_IRUGO, mdss_fb_get_panel_info, NULL);
 static DEVICE_ATTR(msm_fb_src_split_info, S_IRUGO, mdss_fb_get_src_split_info,
 	NULL);
 static DEVICE_ATTR(msm_fb_thermal_level, S_IRUGO | S_IWUSR,
@@ -1133,6 +1155,8 @@ static int mdss_fb_probe(struct platform_device *pdev)
 	rc = mdss_fb_register(mfd);
 	if (rc)
 		return rc;
+
+	mdss_fb_get_split(mfd);
 
 	if (mfd->mdp.init_fnc) {
 		rc = mfd->mdp.init_fnc(mfd);
@@ -1701,8 +1725,9 @@ void mdss_fb_update_backlight(struct msm_fb_data_type *mfd)
 			if (mfd->mdp.ad_calc_bl)
 				(*mfd->mdp.ad_calc_bl)(mfd, temp, &temp,
 								&bl_notify);
-
-			sysfs_notify(&mfd->fbi->dev->kobj, NULL, "pp_bl_event");
+			if (bl_notify)
+				sysfs_notify(&mfd->fbi->dev->kobj, NULL,
+								"pp_bl_event");
 			pdata->set_backlight(pdata, temp);
 			mfd->bl_level_scaled = mfd->unset_bl_level;
 			mfd->allow_bl_update = true;
@@ -3724,6 +3749,13 @@ static int mdss_fb_check_var(struct fb_var_screeninfo *var,
 
 	if ((var->xres_virtual <= 0) || (var->yres_virtual <= 0))
 		return -EINVAL;
+
+	if (info->fix.smem_start) {
+		u32 len = var->xres_virtual * var->yres_virtual *
+			(var->bits_per_pixel / 8);
+		if (len > info->fix.smem_len)
+			return -EINVAL;
+	}
 
 	if ((var->xres == 0) || (var->yres == 0))
 		return -EINVAL;
